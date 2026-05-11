@@ -1,0 +1,45 @@
+print("-------JQL cannot do regex, you must filter in Python-----")
+
+issues = client.search_issues(
+    'project = KAN AND description ~ "demo"',
+    maxResults=100
+)
+
+filtered = [
+    i for i in issues
+    if i.fields.description and ".demo" in i.fields.description
+]
+
+for i in filtered:
+    print(i.key, i.fields.summary)
+
+
+print("-----------------check if any ticket exists-----------")
+
+exists = client.search_issues(
+    'project = KAN AND description ~ "demo"',
+    maxResults=1
+).total > 0
+
+print("Exists:", exists)
+
+me = client.myself()
+
+print(me)
+
+
+print('-------------')
+
+account_id = client.myself()["accountId"]
+
+issue = client.issue("KAN-7")
+
+issue.update(fields={
+    "assignee": {"accountId": account_id}
+})
+
+updated = client.issue("KAN-4")
+print("Assigned successfully")
+
+print("Assignee:", updated.fields.assignee)
+print("Display name:", updated.fields.assignee.displayName)
