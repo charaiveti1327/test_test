@@ -1,0 +1,86 @@
+from langchain_core.tools import tool
+from jira import JIRA
+
+
+client = JIRA(
+    server="https://<yourspace>.atlassian.net",
+    basic_auth=("<email>@gmail.com", JIRA_API_TOKEN)
+)
+
+@tool
+def create_ticket(summary: str, project: str = "KAN"):
+    '''
+    this tool is to create Jira ticket.
+    '''
+    issue = client.create_issue({
+        "project": {"key": project},
+        "summary": summary,
+        "issuetype": {"name": "Bug"}
+    })
+    return issue.key
+
+print(create_ticket.invoke("Test bug from langchain tool"))
+
+
+count = client.search_issues(
+    "project = KAN",
+    maxResults=0
+).total
+
+print("Total tickets in KAN:", count)
+
+
+statuses = ["To Do", "In Progress", "Done"]
+
+for status in statuses:
+    jql = f'project = KAN AND status = "{status}"'
+    
+    count = client.search_issues(jql, maxResults=0).total
+    print(status, ":", count)
+
+print("-------Summary matching--------")
+
+issues = client.search_issues(
+    'project = KAN AND summary ~ "Test ticket"',
+    maxResults=50
+)
+
+for i in issues:
+    print(i.key, i.fields.summary)
+
+
+
+print("-------Description matching--------")
+issues = client.search_issues(
+    'project = KAN AND description ~ "demo"',
+    maxResults=50
+)
+
+for i in issues:
+    print(i.key, i.fields.summary)
+
+
+print("-------JQL cannot do regex, you must filter in Python-----")
+
+issues = client.search_issues(
+    'project = KAN AND description ~ "demo"',
+    maxResults=100
+)
+
+filtered = [
+    i for i in issues
+    if i.fields.description and ".demo" in i.fields.description
+]
+
+for i in filtered:
+    print(i.key, i.fields.summary)
+
+
+print("-----------------check if any ticket exists-----------")
+
+exists = client.search_issues(
+    'project = KAN AND description ~ "demo"',
+    maxResults=1
+).total > 0
+
+print("Exists:", exists)
